@@ -50,7 +50,7 @@ func GetEnvironment() map[string]string {
 }
 
 func GetConfigFromEnv(conf interface{}) error {
-
+	
 	return nil
 }
 
@@ -64,9 +64,12 @@ func GetConfigFromJson(conf interface{}) error {
 	return nil
 }
 
-func processStruct(env map[string]string, conf interface{}) error {
-	varType := reflect.TypeOf(conf)
+func envToConfig(env map[string]string, conf interface{}) error {
+	// if !isStruct(conf) {
+	// 	return fmt.Errorf("config object must be a struct")
+	// }
 
+	varType := reflect.TypeOf(conf).Elem()
 	for i := 0; i < varType.NumField(); i++ {
 		field := varType.Field(i)
 		tag := parseTag(field.Tag.Get("cfg"))
@@ -75,21 +78,18 @@ func processStruct(env map[string]string, conf interface{}) error {
 		if len(tag) >= 2 {
 			fallback = tag[1]
 		}
-		val := getenv(env, tag[1], fallback)
+		val := getenv(env, tag[0], fallback)
 
-		v := reflect.ValueOf(&conf).Elem()
-		fmt.Println(val, v)
-		//.FieldByName(field.Name)
-		//v.SetString(val)
+		reflect.ValueOf(conf).Elem().Field(i).SetString(val)
 	}
 
 	return nil
 }
 
 func parseTag(tag string) []string {
-	tag := strings.SplitN(tag, ",", -1)
+	parsed := strings.SplitN(tag, ",", -1)
 	if len(tag) >= 2 {
-		return tag
+		return parsed
 	}
 	return []string{tag}
 }

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -70,17 +69,36 @@ func TestStrToPairUnescapedEq(t *testing.T) {
 func TestFileToBytesNotFound(t *testing.T) {
 	_, err := fileToBytes("you will never find this file")
 	if err == nil {
-		t.Errorf("It must fail")
+		t.Errorf("It must raise an error")
 	}
 }
 
-func TestProcessStruct(t *testing.T) {
+func TestEnvToConfig(t *testing.T) {
 	type ServerConfig struct {
 		Host     string `cfg:"HOST,localhost"`
 		Port     string `cfg:"PORT,:8080"`
 		Password string `cfg:"PASSWORD"`
 	}
 	s := ServerConfig{}
-	processStruct(map[string]string{}, s)
-	fmt.Println(s)
+	envToConfig(map[string]string{}, &s)
+
+	if s.Host != "localhost" {
+		t.Errorf("Unexpected value, want: (%v), got: (%v)", "localhost", s.Host)
+	}
+	
+	if s.Port != ":8080" {
+		t.Errorf("Unexpected value, want: (%v), got: (%v)", ":8080", s.Port)
+	}
+
+	if s.Password != "" {
+		t.Errorf("Unexpected value, want: (%v), got: (%v)", "", s.Password)
+	}
+}
+
+func TestEnvToConfigNotAStruct(t *testing.T) {
+	v := 1
+	err := envToConfig(map[string]string{}, v) 
+	if err == nil {
+		t.Errorf("It must raise an error")
+	}
 }
